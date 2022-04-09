@@ -1,25 +1,20 @@
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import React from "react";
 import axios from "axios";
 
 import "./App.css";
-import { ReactComponent as Check } from "./check.svg";
+import { SearchForm } from "./components/SearchForm";
+import { List, Item } from "./components/List";
 
 const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
 const useSemiPersistentState = (key, initialState) => {
-  const isMounted = useRef(false);
+  const isMounted = React.useRef(false);
 
-  const [value, setValue] = useState(localStorage.getItem(key) || initialState);
+  const [value, setValue] = React.useState(
+    localStorage.getItem(key) || initialState
+  );
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
     } else {
@@ -31,7 +26,7 @@ const useSemiPersistentState = (key, initialState) => {
   return [value, setValue];
 };
 
-const storiesRecuder = (state, action) => {
+const storiesReducer = (state, action) => {
   switch (action.type) {
     case "STORIES_FETCH_INIT":
       return {
@@ -71,15 +66,15 @@ const getSumComments = (stories) => {
 
 const App = () => {
   const [searchTerm, setSearchTerm] = useSemiPersistentState("search", "React");
-  const [url, setUrl] = useState(`${API_ENDPOINT}${searchTerm}`);
+  const [url, setUrl] = React.useState(`${API_ENDPOINT}${searchTerm}`);
 
-  const [stories, dispatchStories] = useReducer(storiesRecuder, {
+  const [stories, dispatchStories] = React.useReducer(storiesReducer, {
     data: [],
     isLoading: false,
     isError: false,
   });
 
-  const handleFetchStories = useCallback(async () => {
+  const handleFetchStories = React.useCallback(async () => {
     dispatchStories({ type: "STORIES_FETCH_INIT" });
 
     try {
@@ -94,11 +89,11 @@ const App = () => {
     }
   }, [url]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleRemoveStory = useCallback((item) => {
+  const handleRemoveStory = React.useCallback((item) => {
     dispatchStories({
       type: "REMOVE_STORY",
       payload: item,
@@ -117,7 +112,7 @@ const App = () => {
 
   console.log("B:App");
 
-  const sumComments = useMemo(() => getSumComments(stories), [stories]);
+  const sumComments = React.useMemo(() => getSumComments(stories), [stories]);
   return (
     <div className="container">
       <h1 className="headline-primary">
@@ -143,90 +138,6 @@ const App = () => {
   );
 };
 
-const SearchForm = ({ searchTerm, onSearchInput, onSearchSubmit }) => (
-  <form onSubmit={onSearchSubmit} className="search-form">
-    <InputWithLabel
-      id="search"
-      value={searchTerm}
-      isFocused
-      onInputChange={onSearchInput}
-    >
-      <strong>Search:</strong>
-    </InputWithLabel>
-
-    <button
-      type="submit"
-      disabled={!searchTerm}
-      className="button button_large"
-    >
-      Submit
-    </button>
-  </form>
-);
-
-const InputWithLabel = ({
-  id,
-  value,
-  type = "text",
-  onInputChange,
-  isFocused,
-  children,
-}) => {
-  const inputRef = useRef();
-
-  useEffect(() => {
-    if (isFocused && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isFocused]);
-
-  return (
-    <>
-      <label htmlFor={id} className="label">
-        {children}
-      </label>
-      &nbsp;
-      <input
-        ref={inputRef}
-        type={type}
-        id={id}
-        value={value}
-        onChange={onInputChange}
-        className="input"
-      />
-    </>
-  );
-};
-
-const List = memo(
-  ({ list, onRemoveItem }) =>
-    console.log("B:List") || (
-      <ul>
-        {list.map((item) => (
-          <Item key={item.objectID} item={item} onRemoveItem={onRemoveItem} />
-        ))}
-      </ul>
-    )
-);
-
-const Item = ({ item, onRemoveItem }) => (
-  <li className="item">
-    <span style={{ width: "40%" }}>
-      <a href={item.url}>{item.title}</a>
-    </span>
-    <span style={{ width: "30%" }}>{item.author}</span>
-    <span style={{ width: "10%" }}>{item.num_comments}</span>
-    <span style={{ width: "10%" }}>{item.points}</span>
-    <span style={{ width: "10%" }}>
-      <button
-        type="button"
-        onClick={() => onRemoveItem(item)}
-        className="button button_small"
-      >
-        <Check height="18px" width="18px" />
-      </button>
-    </span>
-  </li>
-);
-
 export default App;
+
+export { storiesReducer, SearchForm, List, Item };
